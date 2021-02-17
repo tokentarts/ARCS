@@ -62,6 +62,9 @@ import numpy as np
 import datetime
 
 
+IS_DEVELOPMENT = True
+
+
 root = Tk()
 root.wm_title("ARCS - Annin Robotics Control Software Ver 1.0")
 root.iconbitmap(r'AR.ico')
@@ -104,6 +107,7 @@ nb.add(tab2, text='  Calibration  ')
 
 tab3 = tkinter.ttk.Frame(nb)
 nb.add(tab3, text=' Inputs Outputs ')
+nb.select(tab3)
 
 tab4 = tkinter.ttk.Frame(nb)
 nb.add(tab4, text='   Registers    ')
@@ -138,22 +142,32 @@ def setCom():
     global J6StepCur
     port = "COM" + comPortEntryField.get()
     baud = 115200
-
+    print(f"setCom: connecting to port= {port} baud= {baud}")
     ser = serial.Serial(port,baud)
+
+    # Update main UI
     almStatusLab.config(text="SYSTEM READY", bg = "cornflowerblue")
     almStatusLab2.config(text="SYSTEM READY", bg = "cornflowerblue")
+    # Add to log tab
     Curtime = datetime.datetime.now().strftime("%B %d %Y - %I:%M%p")
     tab6.ElogView.insert(END, Curtime+" - COMMUNICATIONS STARTED WITH TEENSY 3.5")
+    # Dump log tab to disk
     value=tab6.ElogView.get(0,END)
     pickle.dump(value,open("ErrorLog","wb"))
+
     savePosData()
-  except:
+  except Exception as error:
+    print("setCom: ERROR", error)
+    # Update main UI
     almStatusLab.config(text="UNABLE TO ESTABLISH COMMUNICATIONS WITH TEENSY 3.5", bg = "yellow")
     almStatusLab2.config(text="UNABLE TO ESTABLISH COMMUNICATIONS WITH TEENSY 3.5", bg = "yellow")
+    # Add to log tab
     Curtime = datetime.datetime.now().strftime("%B %d %Y - %I:%M%p")
     tab6.ElogView.insert(END, Curtime+" - UNABLE TO ESTABLISH COMMUNICATIONS WITH TEENSY 3.5")
+    # Dump log tab to disk
     value=tab6.ElogView.get(0,END)
     pickle.dump(value,open("ErrorLog","wb"))
+
     savePosData()
 
 def setCom2():
@@ -167,24 +181,50 @@ def setCom2():
     global J6StepCur
     port = "COM" + com2PortEntryField.get()
     baud = 115200
+    print(f"setCom2: connecting to port= {port} baud= {baud}")
     ser2 = serial.Serial(port,baud)
+
     almStatusLab.config(text="SYSTEM READY", bg = "cornflowerblue")
     almStatusLab2.config(text="SYSTEM READY", bg = "cornflowerblue")
+
     Curtime = datetime.datetime.now().strftime("%B %d %Y - %I:%M%p")
     tab6.ElogView.insert(END, Curtime+" - COMMUNICATIONS STARTED WITH MEGA 2560")
+
     value=tab6.ElogView.get(0,END)
     pickle.dump(value,open("ErrorLog","wb"))
+
     savePosData()
-  except:
+  except Exception as error:
+    print("setCom2: ERROR", error)
+
     almStatusLab.config(text="UNABLE TO ESTABLISH COMMUNICATIONS WITH MEGA 2560", bg = "yellow")
     almStatusLab2.config(text="UNABLE TO ESTABLISH COMMUNICATIONS WITH MEGA 2560", bg = "yellow")
+
     Curtime = datetime.datetime.now().strftime("%B %d %Y - %I:%M%p")
     tab6.ElogView.insert(END, Curtime+" - UNABLE TO ESTABLISH COMMUNICATIONS WITH MEGA 2560")
+
     value=tab6.ElogView.get(0,END)
     pickle.dump(value,open("ErrorLog","wb"))
+
     savePosData()
 
 
+def log(*args):
+  print(*args)
+
+def debugLog(*args):
+  if IS_DEVELOPMENT:
+    print(*args)
+
+
+def writeCommandToSer2(command: str):
+  log("Write command to MEGA2560:", command)
+  ser2.write(command.encode())
+  ser2.flushInput()
+  time.sleep(.2)
+
+  debugLog("Waiting for ser2 read")
+  ser2.read()
 
 
 ###############################################################################################################################################################
@@ -3219,7 +3259,10 @@ def insCalibrate():
   tabNumEntryField.delete(0, 'end')
 
 def progViewselect(e):
-  selRow = tab1.progView.curselection()[0]
+  current_selection = tab1.progView.curselection()
+  print("progViewselect: e=", e, "current_selection=", current_selection)
+
+  selRow = current_selection[0]
   curRowEntryField.delete(0, 'end')
   curRowEntryField.insert(0,selRow)
 
@@ -3236,185 +3279,125 @@ def Servo0on():
   savePosData()
   servoPos = servo0onEntryField.get()
   command = "SV0P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def Servo0off():
   savePosData()
   servoPos = servo0offEntryField.get()
   command = "SV0P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def Servo1on():
   savePosData()
   servoPos = servo1onEntryField.get()
   command = "SV1P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def Servo1off():
   savePosData()
   servoPos = servo1offEntryField.get()
   command = "SV1P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def Servo2on():
   savePosData()
   servoPos = servo2onEntryField.get()
   command = "SV2P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def Servo2off():
   savePosData()
   servoPos = servo2offEntryField.get()
   command = "SV2P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 def Servo3on():
   savePosData()
   servoPos = servo3onEntryField.get()
   command = "SV3P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser.read()
+  writeCommandToSer2(command)
 
 def Servo3off():
   savePosData()
   servoPos = servo3offEntryField.get()
   command = "SV3P"+servoPos+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser.read()
+  writeCommandToSer2(command)
 
 def DO1on():
   outputNum = DO1onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO1off():
   outputNum = DO1offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO2on():
   outputNum = DO2onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO2off():
   outputNum = DO2offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO3on():
   outputNum = DO3onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO3off():
   outputNum = DO3offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO4on():
   outputNum = DO4onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO4off():
   outputNum = DO4offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO5on():
   outputNum = DO5onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO5off():
   outputNum = DO5offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO6on():
   outputNum = DO6onEntryField.get()
   command = "ONX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 
 def DO6off():
   outputNum = DO6offEntryField.get()
   command = "OFX"+outputNum+"\n"
-  ser2.write(command.encode())
-  ser2.flushInput()
-  time.sleep(.2)
-  ser2.read()
+  writeCommandToSer2(command)
 
 def TestString():
   message = testSendEntryField.get()
@@ -5061,6 +5044,7 @@ def calRobotMid():
   ser.flushInput()
 
 def savePosData():
+  """ Save current information about the robot to disk. """
   calibration.delete(0, END)
   calibration.insert(END, J1StepCur)
   calibration.insert(END, J1AngCur)
@@ -7069,9 +7053,11 @@ servo3offEntryField.place(x=90, y=295)
 
 DO1onEntryField = Entry(tab3,width=5)
 DO1onEntryField.place(x=230, y=15)
+DO1onEntryField.insert(END, '28')
 
 DO1offEntryField = Entry(tab3,width=5)
 DO1offEntryField.place(x=230, y=55)
+DO1offEntryField.insert(END, '28')
 
 DO2onEntryField = Entry(tab3,width=5)
 DO2onEntryField.place(x=230, y=95)
@@ -8180,24 +8166,27 @@ setCom2()
 
 
 loadProg()
-msg = "ANNIN ROBOTICS SOFTWARE AND MODELS ARE FREE:\n\
-\n\
-*for personal use.\n\
-*for educational use.\n\
-*for building your own robot(s).\n\
-*for automating your own business.\n\
-\n\
-IT IS NOT OK TO RESELL THIS SOFTWARE\n\
-FOR A PROFIT - IT MUST REMAIN FREE.\n\
-\n\
-IT IS NOT OK TO SELL AR2 ROBOTS,\n\
-ROBOT PARTS, OR ANY OTHER VERSION \n\
-OF ROBOT OR SOFTWARE BASED ON THE \n\
-AR2 ROBOT DESIGN FOR PROFIT.\n\
-\n\
-Copyright (c) 2019, Chris Annin"
 
-tkinter.messagebox.showwarning("ARCS License / Copyright notice", msg)
+if not IS_DEVELOPMENT:
+  msg = "ANNIN ROBOTICS SOFTWARE AND MODELS ARE FREE:\n\
+  \n\
+  *for personal use.\n\
+  *for educational use.\n\
+  *for building your own robot(s).\n\
+  *for automating your own business.\n\
+  \n\
+  IT IS NOT OK TO RESELL THIS SOFTWARE\n\
+  FOR A PROFIT - IT MUST REMAIN FREE.\n\
+  \n\
+  IT IS NOT OK TO SELL AR2 ROBOTS,\n\
+  ROBOT PARTS, OR ANY OTHER VERSION \n\
+  OF ROBOT OR SOFTWARE BASED ON THE \n\
+  AR2 ROBOT DESIGN FOR PROFIT.\n\
+  \n\
+  Copyright (c) 2019, Chris Annin"
+
+  tkinter.messagebox.showwarning("ARCS License / Copyright notice", msg)
+
 xboxUse = 0
 
 global blockEncPosCal
